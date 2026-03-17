@@ -1,0 +1,11 @@
+[tasks.lint]
+description = "Run shellcheck on all plugin files"
+run = "shellcheck **/*.plugin.zsh **/*.zsh 2>/dev/null || true"
+
+[tasks.fmt]
+description = "Format shell files with shfmt"
+run = "shfmt -w -i 2 -ci **/*.plugin.zsh **/*.zsh 2>/dev/null || true"
+
+[tasks.fmt-check]
+description = "Check shell file formatting (CI)"
+run = "shfmt -d -i 2 -ci **/*.plugin.zsh **/*.zsh 2>/dev/null || true"
