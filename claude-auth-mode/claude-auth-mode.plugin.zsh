@@ -146,6 +146,7 @@ claude-auth-mode() {
   esac
 }
 
+alias cam='claude-auth-mode'
 alias camt='claude-auth-mode toggle'
 alias cams='claude-auth-mode status'
 
