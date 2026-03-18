@@ -52,7 +52,7 @@ _claude_auth_mode_setup_foundry() {
   echo ""
 
   local template="$CLAUDE_AUTH_MODE_PLUGIN_DIR/templates/foundry.env.template"
-  local tmpfile="$CLAUDE_AUTH_MODE_DATA/foundry.env.tmp"
+  local tmpfile="$CLAUDE_AUTH_MODE_DATA/foundry.tmp.enc.env"
   local key value
 
   : > "$tmpfile"
