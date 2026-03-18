@@ -132,8 +132,15 @@ claude-auth-mode() {
         claude-auth-mode foundry
       fi
       ;;
+    reset)
+      rm -rf "$CLAUDE_AUTH_MODE_DATA"
+      unset CLAUDE_CODE_USE_FOUNDRY ANTHROPIC_FOUNDRY_API_KEY \
+            ANTHROPIC_FOUNDRY_RESOURCE ANTHROPIC_MODEL
+      _claude_auth_mode_init
+      echo "→ 초기화 완료"
+      ;;
     *)
-      echo "Usage: claude-auth-mode [toggle|foundry|sub|status]" >&2
+      echo "Usage: claude-auth-mode [toggle|foundry|sub|status|reset]" >&2
       return 1
       ;;
   esac
