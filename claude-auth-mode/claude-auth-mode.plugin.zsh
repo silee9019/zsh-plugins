@@ -32,7 +32,7 @@ _claude_auth_mode_init() {
   # 저장된 모드 자동 로드
   local active
   active=$(cat "$CLAUDE_AUTH_MODE_DATA/active" 2>/dev/null)
-  [[ "$active" == "foundry" ]] && claude-auth-mode foundry >/dev/null 2>&1
+  [[ "$active" == "foundry" ]] && claude-auth-mode foundry >/dev/null 2>&1 || true
 }
 
 # ── interactive foundry env 설정 ──
