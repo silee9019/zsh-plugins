@@ -102,7 +102,7 @@ claude-auth-mode() {
         echo "  $decrypted" >&2
         return 1
       fi
-      eval "export ${decrypted//$'\n'/$'\nexport '}"
+      eval "$(printf '%s\n' "$decrypted" | sed '/^$/d; s/^/export /')"
       export CLAUDE_CODE_USE_FOUNDRY=1
       echo "foundry" > "$CLAUDE_AUTH_MODE_DATA/active"
       echo "→ Foundry 모드 (claude 재시작 시 적용)"
