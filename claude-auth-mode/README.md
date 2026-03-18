@@ -44,5 +44,5 @@ claude-auth-mode toggle        # 토글
 | 파일 | 설명 |
 |------|------|
 | `.sops.yaml` | age 암호화 규칙 |
-| `foundry.sops.env` | Foundry API key (sops 암호화) |
+| `foundry.enc.env` | Foundry API key (sops 암호화) |
 | `active` | 현재 활성 모드 (`foundry` 또는 `subscription`) |

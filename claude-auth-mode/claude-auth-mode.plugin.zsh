@@ -28,11 +28,9 @@ _claude_auth_mode_init() {
     fi
   fi
 
-  # foundry.sops.env 템플릿 복사
-  if [[ ! -f "$CLAUDE_AUTH_MODE_DATA/foundry.sops.env" ]]; then
-    cp "$CLAUDE_AUTH_MODE_PLUGIN_DIR/templates/foundry.env.template" \
-       "$CLAUDE_AUTH_MODE_DATA/foundry.sops.env"
-    chmod 600 "$CLAUDE_AUTH_MODE_DATA/foundry.sops.env"
+  # 마이그레이션: foundry.sops.env → foundry.enc.env
+  if [[ -f "$CLAUDE_AUTH_MODE_DATA/foundry.sops.env" && ! -f "$CLAUDE_AUTH_MODE_DATA/foundry.enc.env" ]]; then
+    mv "$CLAUDE_AUTH_MODE_DATA/foundry.sops.env" "$CLAUDE_AUTH_MODE_DATA/foundry.enc.env"
   fi
 
   # 저장된 모드 자동 로드
@@ -42,36 +40,40 @@ _claude_auth_mode_init() {
 }
 
 # ── interactive foundry env 설정 ──
-# foundry.sops.env에 CHANGE_ME가 남아있을 때 호출됨
-# TODO: 사용자 구현 — vared/read로 API key 입력 → sops encrypt
+# foundry.enc.env가 없을 때 호출됨
 _claude_auth_mode_setup_foundry() {
   # 비대화형 셸이면 안내만 출력
   if [[ ! -t 0 ]]; then
-    echo "직접 편집하세요: sops $CLAUDE_AUTH_MODE_DATA/foundry.sops.env" >&2
+    echo "직접 편집하세요: sops $CLAUDE_AUTH_MODE_DATA/foundry.enc.env" >&2
     return 1
   fi
 
   echo "=== Foundry 환경변수 설정 ==="
   echo ""
 
-  local api_key resource model
-  vared -p 'ANTHROPIC_FOUNDRY_API_KEY> ' api_key
-  vared -p 'ANTHROPIC_FOUNDRY_RESOURCE> ' resource
-  vared -p 'ANTHROPIC_MODEL> ' model
+  local template="$CLAUDE_AUTH_MODE_PLUGIN_DIR/templates/foundry.env.template"
+  local tmpfile="$CLAUDE_AUTH_MODE_DATA/foundry.env.tmp"
+  local key value
 
-  printf '%s\n' \
-    "ANTHROPIC_FOUNDRY_API_KEY=$api_key" \
-    "ANTHROPIC_FOUNDRY_RESOURCE=$resource" \
-    "ANTHROPIC_MODEL=$model" \
-    > "$CLAUDE_AUTH_MODE_DATA/foundry.sops.env"
+  : > "$tmpfile"
+  chmod 600 "$tmpfile"
+
+  while IFS='=' read -r key _; do
+    [[ -z "$key" || "$key" == \#* ]] && continue
+    value=""
+    vared -p "${key}> " value
+    printf '%s=%s\n' "$key" "$value" >> "$tmpfile"
+  done < "$template"
 
   if ! sops --config "$CLAUDE_AUTH_MODE_DATA/.sops.yaml" \
-    --encrypt --in-place \
-    --input-type dotenv --output-type dotenv \
-    "$CLAUDE_AUTH_MODE_DATA/foundry.sops.env"; then
+    --encrypt --input-type dotenv --output-type dotenv \
+    "$tmpfile" > "$CLAUDE_AUTH_MODE_DATA/foundry.enc.env"; then
     echo "error: sops 암호화 실패 — age 키와 .sops.yaml 설정을 확인하세요" >&2
+    rm -f "$tmpfile"
     return 1
   fi
+
+  rm -f "$tmpfile"
 }
 
 # ── 메인 함수 ──
@@ -88,15 +90,15 @@ claude-auth-mode() {
         return 1
       fi
 
-      # CHANGE_ME가 남아있으면 interactive setup
-      if grep -q 'CHANGE_ME' "$CLAUDE_AUTH_MODE_DATA/foundry.sops.env" 2>/dev/null; then
+      # foundry.enc.env가 없으면 interactive setup
+      if [[ ! -f "$CLAUDE_AUTH_MODE_DATA/foundry.enc.env" ]]; then
         _claude_auth_mode_setup_foundry || return 1
       fi
 
       local decrypted
       if ! decrypted="$(sops --config "$CLAUDE_AUTH_MODE_DATA/.sops.yaml" \
-        --decrypt --output-type dotenv "$CLAUDE_AUTH_MODE_DATA/foundry.sops.env" 2>&1)"; then
-        echo "error: sops 복호화 실패 — foundry.sops.env가 암호화되었는지 확인하세요" >&2
+        --decrypt --output-type dotenv "$CLAUDE_AUTH_MODE_DATA/foundry.enc.env" 2>&1)"; then
+        echo "error: sops 복호화 실패 — foundry.enc.env가 암호화되었는지 확인하세요" >&2
         echo "  $decrypted" >&2
         return 1
       fi
