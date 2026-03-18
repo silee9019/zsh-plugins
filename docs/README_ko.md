@@ -20,4 +20,4 @@ source /path/to/zsh-plugins/<plugin-name>/<plugin-name>.plugin.zsh
 
 | 플러그인 | 설명 |
 |----------|------|
-| (추가 예정) | — |
+| [claude-auth-mode](../claude-auth-mode/) | Claude Code 인증 모드 전환 (subscription ↔ Azure AI Foundry), sops+age 기반 |

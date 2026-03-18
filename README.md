@@ -20,4 +20,4 @@ source /path/to/zsh-plugins/<plugin-name>/<plugin-name>.plugin.zsh
 
 | Plugin | Description |
 |--------|-------------|
-| (coming soon) | — |
+| [claude-auth-mode](claude-auth-mode/) | Claude Code auth mode switcher (subscription ↔ Azure AI Foundry) with sops+age |

@@ -6,12 +6,13 @@
 
 ```
 zsh-plugins/
-├── <plugin-name>/
-│   ├── <plugin-name>.plugin.zsh   ← 메인 플러그인 파일
-│   ├── functions/                  ← 보조 함수 (선택)
-│   └── README.md                   ← 플러그인별 문서
-└── docs/
-    └── README_ko.md
+├── claude-auth-mode/
+│   ├── claude-auth-mode.plugin.zsh   ← 인증 모드 전환 (sops+age)
+│   ├── templates/                     ← .sops.yaml + foundry.env 템플릿
+│   └── README.md
+├── docs/
+│   └── README_ko.md
+└── .mise.toml
 ```
 
 각 플러그인은 독립 디렉토리에 `<name>.plugin.zsh` 엔트리포인트로 구성.
