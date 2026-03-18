@@ -11,13 +11,18 @@ _claude_auth_mode_init() {
   # .sops.yaml 생성 (age 공개키 자동 감지)
   if [[ ! -f "$CLAUDE_AUTH_MODE_DATA/.sops.yaml" ]]; then
     local age_keys="$HOME/.config/sops/age/keys.txt"
-    if [[ -f "$age_keys" ]]; then
+    if [[ ! -f "$age_keys" ]]; then
+      echo "warn: claude-auth-mode: age 키 파일이 없습니다 ($age_keys)" >&2
+      echo "  foundry 모드 사용 시: age-keygen -o $age_keys" >&2
+    else
       local age_pub
       age_pub=$(grep '^# public key:' "$age_keys" | head -1 | awk '{print $NF}')
       if [[ -n "$age_pub" ]]; then
         sed "s|__AGE_PUBLIC_KEY__|$age_pub|g" \
           "$CLAUDE_AUTH_MODE_PLUGIN_DIR/templates/.sops.yaml" \
           > "$CLAUDE_AUTH_MODE_DATA/.sops.yaml"
+      else
+        echo "warn: claude-auth-mode: age 공개키를 추출할 수 없습니다" >&2
       fi
     fi
   fi
@@ -59,11 +64,12 @@ _claude_auth_mode_setup_foundry() {
     "ANTHROPIC_MODEL=$model" \
     > "$CLAUDE_AUTH_MODE_DATA/foundry.sops.env"
 
-  sops --encrypt --in-place \
+  if ! sops --encrypt --in-place \
     --input-type dotenv --output-type dotenv \
-    "$CLAUDE_AUTH_MODE_DATA/foundry.sops.env"
-
-  return 0
+    "$CLAUDE_AUTH_MODE_DATA/foundry.sops.env"; then
+    echo "error: sops 암호화 실패 — age 키와 .sops.yaml 설정을 확인하세요" >&2
+    return 1
+  fi
 }
 
 # ── 메인 함수 ──
@@ -72,6 +78,14 @@ claude-auth-mode() {
 
   case "$mode" in
     foundry|f)
+      # .sops.yaml 존재 확인
+      if [[ ! -f "$CLAUDE_AUTH_MODE_DATA/.sops.yaml" ]]; then
+        echo "error: .sops.yaml이 없습니다 — age 키를 먼저 설정하세요:" >&2
+        echo "  age-keygen -o ~/.config/sops/age/keys.txt" >&2
+        echo "  그 후 셸을 재시작하세요" >&2
+        return 1
+      fi
+
       # CHANGE_ME가 남아있으면 interactive setup
       if grep -q 'CHANGE_ME' "$CLAUDE_AUTH_MODE_DATA/foundry.sops.env" 2>/dev/null; then
         _claude_auth_mode_setup_foundry || return 1
