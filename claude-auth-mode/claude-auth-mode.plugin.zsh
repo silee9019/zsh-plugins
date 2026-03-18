@@ -65,7 +65,8 @@ _claude_auth_mode_setup_foundry() {
     "ANTHROPIC_MODEL=$model" \
     > "$CLAUDE_AUTH_MODE_DATA/foundry.sops.env"
 
-  if ! sops --encrypt --in-place \
+  if ! sops --config "$CLAUDE_AUTH_MODE_DATA/.sops.yaml" \
+    --encrypt --in-place \
     --input-type dotenv --output-type dotenv \
     "$CLAUDE_AUTH_MODE_DATA/foundry.sops.env"; then
     echo "error: sops 암호화 실패 — age 키와 .sops.yaml 설정을 확인하세요" >&2
@@ -93,7 +94,8 @@ claude-auth-mode() {
       fi
 
       local decrypted
-      if ! decrypted="$(sops --decrypt --output-type dotenv "$CLAUDE_AUTH_MODE_DATA/foundry.sops.env" 2>&1)"; then
+      if ! decrypted="$(sops --config "$CLAUDE_AUTH_MODE_DATA/.sops.yaml" \
+        --decrypt --output-type dotenv "$CLAUDE_AUTH_MODE_DATA/foundry.sops.env" 2>&1)"; then
         echo "error: sops 복호화 실패 — foundry.sops.env가 암호화되었는지 확인하세요" >&2
         echo "  $decrypted" >&2
         return 1
