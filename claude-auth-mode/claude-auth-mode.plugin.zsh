@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # claude-auth-mode: Claude Code 인증 모드 전환 (subscription ↔ Azure AI Foundry)
 # zinit: zinit ice pick"claude-auth-mode/claude-auth-mode.plugin.zsh"; zinit light silee9019/zsh-plugins
 
@@ -92,13 +93,12 @@ claude-auth-mode() {
       fi
 
       local decrypted
-      decrypted="$(sops --decrypt --output-type dotenv "$CLAUDE_AUTH_MODE_DATA/foundry.sops.env" 2>&1)"
-      if [[ $? -ne 0 ]]; then
+      if ! decrypted="$(sops --decrypt --output-type dotenv "$CLAUDE_AUTH_MODE_DATA/foundry.sops.env" 2>&1)"; then
         echo "error: sops 복호화 실패 — foundry.sops.env가 암호화되었는지 확인하세요" >&2
         echo "  $decrypted" >&2
         return 1
       fi
-      eval "$(echo "$decrypted" | sed 's/^/export /')"
+      eval "export ${decrypted//$'\n'/$'\nexport '}"
       export CLAUDE_CODE_USE_FOUNDRY=1
       echo "foundry" > "$CLAUDE_AUTH_MODE_DATA/active"
       echo "→ Foundry 모드 (claude 재시작 시 적용)"
