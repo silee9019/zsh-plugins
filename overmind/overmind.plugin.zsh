@@ -258,6 +258,9 @@ _overmind() {
   return "$ret"
 }
 
-if (( $+functions[compdef] )); then
-  compdef _overmind overmind
+if ! (( $+functions[compdef] )); then
+  autoload -Uz compinit
+  compinit -C
 fi
+
+compdef _overmind overmind
