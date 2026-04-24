@@ -258,20 +258,6 @@ _overmind() {
   return "$ret"
 }
 
-_overmind_register_completion() {
-  if ! (( $+functions[compdef] )); then
-    autoload -Uz compinit
-    compinit -C
-  fi
-
+if (( $+functions[compdef] )); then
   compdef _overmind overmind
-}
-
-_overmind_register_completion_precmd() {
-  _overmind_register_completion
-  add-zsh-hook -d precmd _overmind_register_completion_precmd
-}
-
-_overmind_register_completion
-autoload -Uz add-zsh-hook
-add-zsh-hook precmd _overmind_register_completion_precmd
+fi
