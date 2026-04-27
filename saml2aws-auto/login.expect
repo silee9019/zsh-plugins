@@ -20,6 +20,16 @@ expect {
         set sent_totp 1
         exp_continue
     }
+    -re {(?i)Username} {
+        send_user "\n\[saml2aws-auto] match: Username → Enter (default)\n"
+        send -- "\r"
+        exp_continue
+    }
+    -re {(?i)Password} {
+        send_user "\n\[saml2aws-auto] match: Password → Enter (saved/SSO)\n"
+        send -- "\r"
+        exp_continue
+    }
     -re {(?i)(verification|enter code|mfa|one[- ]?time|totp|otp)} {
         if {!$sent_totp} {
             send_user "\n\[saml2aws-auto] match: secondary pattern → sending TOTP\n"
