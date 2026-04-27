@@ -1,7 +1,7 @@
 #!/usr/bin/env expect -f
 # saml2aws-auto: AzureAD 로그인 TOTP 자동 주입
 # argv: <totp>
-# env:  SAML2AWS_AUTO_DEBUG=1 → expect 내부 트레이스
+# env:  SAML2AWS_AUTO_DEBUG=1 → expect 내부 트레이스 (-d 수준)
 
 set timeout 90
 set totp [lindex $argv 0]
@@ -9,13 +9,20 @@ set totp [lindex $argv 0]
 if {[info exists ::env(SAML2AWS_AUTO_DEBUG)]} { exp_internal 1 }
 
 log_user 1
-spawn -noecho saml2aws login --force --skip-prompt
+spawn -noecho saml2aws login --force
 
 set sent_totp 0
 
 expect {
-    -re {(?i)(verification code|enter code|mfa.*token|one[- ]?time|totp|otp token)} {
+    -re {verification code} {
+        send_user "\n\[saml2aws-auto] match: verification code → sending TOTP\n"
+        send -- "$totp\r"
+        set sent_totp 1
+        exp_continue
+    }
+    -re {(?i)(verification|enter code|mfa|one[- ]?time|totp|otp)} {
         if {!$sent_totp} {
+            send_user "\n\[saml2aws-auto] match: secondary pattern → sending TOTP\n"
             send -- "$totp\r"
             set sent_totp 1
         }
@@ -26,7 +33,7 @@ expect {
         exp_continue
     }
     timeout {
-        send_user "\nsaml2aws-auto: timeout\n"
+        send_user "\n\[saml2aws-auto] timeout (sent_totp=$sent_totp)\n"
         exit 124
     }
     eof
