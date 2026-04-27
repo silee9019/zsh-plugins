@@ -22,6 +22,8 @@ source /path/to/zsh-plugins/<plugin-name>/<plugin-name>.plugin.zsh
 |----------|------|
 | [claude-auth-mode](../claude-auth-mode/) | Claude Code 인증 모드 전환 (subscription ↔ Azure AI Foundry), sops+age 기반 |
 | [overmind](../overmind/) | Overmind 명령, 옵션, alias, Procfile 프로세스명을 위한 Zsh 자동 완성 |
+| [totp](../totp/) | macOS Keychain 기반 TOTP(RFC 6238) 생성기 (`totp <name>`) |
+| [saml2aws-auto](../saml2aws-auto/) | `saml2aws login`(AzureAD)을 expect로 감싸 비밀번호+TOTP 자동 주입 |
 
 ## Overmind 자동 완성
 
