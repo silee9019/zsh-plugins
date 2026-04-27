@@ -16,6 +16,7 @@
 # 마커: kind(-D 필드) = "TOTP (totp.plugin.zsh)"
 
 typeset -g _TOTP_KIND='TOTP (totp.plugin.zsh)'
+typeset -g _TOTP_VERSION='0.1.0'
 
 _totp_calc() {
   /usr/bin/env python3 -c '
@@ -65,20 +66,23 @@ _totp_list_all() {
 
 _totp_help() {
   cat <<EOF
-totp — macOS Keychain 기반 TOTP 생성기
+totp $_TOTP_VERSION — macOS Keychain 기반 TOTP 생성기
+
+Usage:
+  totp [FLAGS] [SUBCOMMAND] [ARGS...]
+
+Flags:
+  -h, --help            도움말 출력 후 종료
+  -v, --version         버전 출력 후 종료
 
 Subcommands:
-  totp                  fzf picker (totp 마커 항목만) → 코드 출력
-  totp <name>           6자리 코드 출력 + 클립보드 복사
-  totp add <name>       secret 등록 + totp 마커 (입력 시 echo 안 됨)
-  totp rm <name>        등록 제거
-  totp ls [OPTIONS]     totp 마커 항목 나열
-  totp tag <name>       기존 keychain 항목에 totp 마커 부착 (마이그레이션)
-  totp -h, --help, help 이 도움말 출력
-
-Options for 'totp ls':
-  --all                 마커 무시, keychain의 모든 generic-password 나열
-  <pattern>             grep 필터 (--all 뒤에 와도 됨)
+  (none)                fzf picker (totp 마커 항목만) → 코드 출력
+  <name>                6자리 코드 출력 + 클립보드 복사
+  add <name>            secret 등록 + totp 마커 (입력 숨김)
+  rm <name>             등록 제거 (alias: remove, delete)
+  ls [--all] [pattern]  마커 항목 나열. --all은 마커 무시 (alias: list)
+  tag <name>            기존 keychain 항목에 totp 마커 부착 (마이그레이션)
+  help                  이 도움말 출력
 
 저장 컨벤션:
   service="<name>"  account=\$USER  kind="$_TOTP_KIND"
@@ -170,6 +174,11 @@ totp() {
       return 0
       ;;
 
+    -v|--version)
+      print -- "totp $_TOTP_VERSION"
+      return 0
+      ;;
+
     '')
       command -v fzf >/dev/null 2>&1 \
         || { print -u2 "totp: fzf not installed (인터랙티브 모드 필요)"; return 127 }
@@ -214,6 +223,8 @@ _totp_marked_completion() {
   local -a entries
   entries=("${(@f)$(_totp_list_marked 2>/dev/null)}")
   if (( ${#entries} )); then
+    # _describe는 'value:desc' 포맷으로 파싱하므로 항목 내 콜론을 escape
+    entries=("${(@)entries//:/\\:}")
     _describe -t totp-entries 'totp entry' entries
   else
     _message 'no totp-marked entries (try: totp add ...)'
@@ -224,6 +235,7 @@ _totp_all_completion() {
   local -a entries
   entries=("${(@f)$(_totp_list_all 2>/dev/null)}")
   if (( ${#entries} )); then
+    entries=("${(@)entries//:/\\:}")
     _describe -t keychain-entries 'keychain entry' entries
   else
     _message 'no keychain entries'
@@ -241,6 +253,7 @@ _totp() {
 
   _arguments -C \
     '(- *)'{-h,--help}'[show help]' \
+    '(- *)'{-v,--version}'[show version]' \
     '1:command:->command' \
     '*::arg:->args' && ret=0
 
