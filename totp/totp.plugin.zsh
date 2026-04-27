@@ -211,10 +211,7 @@ totp() {
 _totp_subcommands=(
   'add:Register a new TOTP secret (with marker)'
   'rm:Remove a TOTP entry'
-  'remove:Alias for rm'
-  'delete:Alias for rm'
   'ls:List entries (marker-only by default)'
-  'list:Alias for ls'
   'tag:Add totp marker to existing keychain entry'
   'help:Show help'
 )
@@ -243,16 +240,25 @@ _totp_all_completion() {
 }
 
 _totp_flags=(
-  '-h:show help'
   '--help:show help'
-  '-v:show version'
   '--version:show version'
+  '-h:show help'
+  '-v:show version'
 )
 
-_totp_first_arg() {
+_totp_subcommand_describe() {
   _describe -t commands 'totp subcommand' _totp_subcommands
-  _describe -t flags    'totp flag'       _totp_flags
-  _totp_marked_completion
+}
+
+_totp_flag_describe() {
+  _describe -t flags 'totp flag' _totp_flags
+}
+
+_totp_first_arg() {
+  _alternative \
+    'subcommands:subcommand:_totp_subcommand_describe' \
+    'flags:flag:_totp_flag_describe' \
+    'entries:totp entry:_totp_marked_completion'
 }
 
 _totp() {
@@ -260,8 +266,6 @@ _totp() {
   typeset -A opt_args
 
   _arguments -C \
-    '(- *)'{-h,--help}'[show help]' \
-    '(- *)'{-v,--version}'[show version]' \
     '1:command:->command' \
     '*::arg:->args' && ret=0
 
