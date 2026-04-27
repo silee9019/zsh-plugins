@@ -18,11 +18,15 @@ zinit light silee9019/zsh-plugins
 ## Usage
 
 ```zsh
+totp                               # fzf picker → 선택 시 코드 출력
 totp add "MS: you@example.com"     # secret 등록 (입력 숨김)
 totp     "MS: you@example.com"     # 6자리 코드 → stdout + 클립보드
-totp ls  "MS:"                     # service 이름이 pattern 포함하는 항목 나열
+totp ls                            # 등록된 service 전체 나열
+totp ls  "MS:"                     # pattern 필터
 totp rm  "MS: you@example.com"     # 제거
 ```
+
+`totp` 인자 없이 호출하면 [fzf](https://github.com/junegunn/fzf)로 keychain의 generic-password service를 선택할 수 있다 (oh-my-zsh `fzf` 플러그인 또는 `brew install fzf` 필요).
 
 저장 컨벤션:
 - `service = <name>` (raw, prefix 없음 — 사용자 기존 keychain 컨벤션 그대로 사용)
