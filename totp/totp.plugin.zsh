@@ -242,8 +242,16 @@ _totp_all_completion() {
   fi
 }
 
+_totp_flags=(
+  '-h:show help'
+  '--help:show help'
+  '-v:show version'
+  '--version:show version'
+)
+
 _totp_first_arg() {
   _describe -t commands 'totp subcommand' _totp_subcommands
+  _describe -t flags    'totp flag'       _totp_flags
   _totp_marked_completion
 }
 
