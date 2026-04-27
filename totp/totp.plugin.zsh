@@ -199,36 +199,57 @@ totp() {
 
 # ─── zsh completion ──────────────────────────────────────────────
 
+_totp_subcommands=(
+  'add:Register a new TOTP secret (with marker)'
+  'rm:Remove a TOTP entry'
+  'remove:Alias for rm'
+  'delete:Alias for rm'
+  'ls:List entries (marker-only by default)'
+  'list:Alias for ls'
+  'tag:Add totp marker to existing keychain entry'
+  'help:Show help'
+)
+
+_totp_marked_completion() {
+  local -a entries
+  entries=("${(@f)$(_totp_list_marked 2>/dev/null)}")
+  if (( ${#entries} )); then
+    _describe -t totp-entries 'totp entry' entries
+  else
+    _message 'no totp-marked entries (try: totp add ...)'
+  fi
+}
+
+_totp_all_completion() {
+  local -a entries
+  entries=("${(@f)$(_totp_list_all 2>/dev/null)}")
+  if (( ${#entries} )); then
+    _describe -t keychain-entries 'keychain entry' entries
+  else
+    _message 'no keychain entries'
+  fi
+}
+
+_totp_first_arg() {
+  _describe -t commands 'totp subcommand' _totp_subcommands
+  _totp_marked_completion
+}
+
 _totp() {
-  local curcontext="$curcontext" state line ret=1
+  local context state state_descr line ret=1
   typeset -A opt_args
 
-  local -a subcommands=(
-    'add:Register a new TOTP secret (with marker)'
-    'rm:Remove a TOTP entry'
-    'remove:Alias for rm'
-    'delete:Alias for rm'
-    'ls:List entries (marker-only by default)'
-    'list:Alias for ls'
-    'tag:Add totp marker to existing keychain entry'
-    'help:Show help'
-  )
-
   _arguments -C \
-    '(- 1 *)'{-h,--help}'[show help]' \
-    '1: :->cmd' \
-    '*:: :->args' \
-    && ret=0
+    '(- *)'{-h,--help}'[show help]' \
+    '1:command:->command' \
+    '*::arg:->args' && ret=0
 
   case "$state" in
-    cmd)
-      _alternative \
-        "subcommands:subcommand:((${(j: :)${(@q-)subcommands}}))" \
-        'entries:totp entry:_totp_marked_completion' \
-        && ret=0
+    command)
+      _totp_first_arg && ret=0
       ;;
     args)
-      case "${line[1]}" in
+      case "${words[2]}" in
         rm|remove|delete)
           _totp_marked_completion && ret=0
           ;;
@@ -238,11 +259,9 @@ _totp() {
         ls|list)
           _arguments \
             '--all[ignore marker, list all generic-passwords]' \
-            '*::pattern:' \
-            && ret=0
+            '*:pattern:' && ret=0
           ;;
         add)
-          # 새 이름 입력 — 완성 후보 없음 (기존 항목 덮어쓰기 방지)
           _message 'new entry name (e.g. "MS: you@example.com")' && ret=0
           ;;
       esac
@@ -250,20 +269,6 @@ _totp() {
   esac
 
   return $ret
-}
-
-_totp_marked_completion() {
-  local -a entries
-  entries=( ${(f)"$(_totp_list_marked 2>/dev/null)"} )
-  (( ${#entries} )) || { _message 'no totp-marked entries (try: totp add ...)'; return 1 }
-  _describe -t totp-entries 'totp entry' entries
-}
-
-_totp_all_completion() {
-  local -a entries
-  entries=( ${(f)"$(_totp_list_all 2>/dev/null)"} )
-  (( ${#entries} )) || { _message 'no keychain entries'; return 1 }
-  _describe -t keychain-entries 'keychain entry' entries
 }
 
 if (( $+functions[compdef] )); then
