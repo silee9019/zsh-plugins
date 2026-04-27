@@ -1,28 +1,19 @@
 #!/usr/bin/env expect -f
-# saml2aws-auto: AzureAD 자동 로그인용 expect 드라이버
-# argv: <password> <totp>
-# env:  SAML2AWS_AUTO_DEBUG=1 → expect 내부 트레이스(-d)
+# saml2aws-auto: AzureAD 로그인 TOTP 자동 주입
+# argv: <totp>
+# env:  SAML2AWS_AUTO_DEBUG=1 → expect 내부 트레이스
 
 set timeout 90
-set password [lindex $argv 0]
-set totp     [lindex $argv 1]
+set totp [lindex $argv 0]
 
 if {[info exists ::env(SAML2AWS_AUTO_DEBUG)]} { exp_internal 1 }
 
 log_user 1
 spawn -noecho saml2aws login --force --skip-prompt
 
-set sent_password 0
 set sent_totp 0
 
 expect {
-    -re {(?i)(password|passcode)} {
-        if {!$sent_password} {
-            send -- "$password\r"
-            set sent_password 1
-        }
-        exp_continue
-    }
     -re {(?i)(verification code|enter code|mfa.*token|one[- ]?time|totp|otp token)} {
         if {!$sent_totp} {
             send -- "$totp\r"
@@ -30,8 +21,7 @@ expect {
         }
         exp_continue
     }
-    -re {(?i)(selected role|account:|please choose|^\?)} {
-        # role 선택 prompt 등이 뜨면 그대로 enter (default 선택)
+    -re {(?i)(selected role|please choose role|please select)} {
         send -- "\r"
         exp_continue
     }

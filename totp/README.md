@@ -18,13 +18,17 @@ zinit light silee9019/zsh-plugins
 ## Usage
 
 ```zsh
-totp add github         # secret 등록 (입력 숨김)
-totp github             # 6자리 코드 → stdout + 클립보드
-totp ls                 # 등록된 항목 나열
-totp rm github          # 제거
+totp add "MS: you@example.com"     # secret 등록 (입력 숨김)
+totp     "MS: you@example.com"     # 6자리 코드 → stdout + 클립보드
+totp ls  "MS:"                     # service 이름이 pattern 포함하는 항목 나열
+totp rm  "MS: you@example.com"     # 제거
 ```
 
-저장 위치는 macOS Keychain(`service="totp:<name>"`, `account="$USER"`).
+저장 컨벤션:
+- `service = <name>` (raw, prefix 없음 — 사용자 기존 keychain 컨벤션 그대로 사용)
+- `account = $USER`
+- 저장 위치: macOS Keychain (login)
+
 첫 조회 시 Keychain 권한 다이얼로그가 한 번 뜬다 — "Always Allow" 누르면 이후 조용함.
 
 ## Notes

@@ -3,17 +3,15 @@
 # zinit: zinit ice pick"totp/totp.plugin.zsh"; zinit light silee9019/zsh-plugins
 #
 # Usage:
-#   totp <name>         # 6자리 코드를 stdout + 클립보드로 출력
-#   totp add <name>     # secret을 Keychain에 등록 (입력 시 echo 안 됨)
-#   totp rm <name>      # Keychain에서 제거
-#   totp ls             # 등록된 totp:* 항목 나열
+#   totp <name>          # 6자리 코드를 stdout + 클립보드로 출력
+#   totp add <name>      # secret을 Keychain에 등록 (입력 시 echo 안 됨)
+#   totp rm <name>       # Keychain에서 제거
+#   totp ls <pattern>    # service 이름이 pattern을 포함하는 항목 나열
 #
-# 저장 위치: macOS Keychain, service="totp:<name>", account="$USER"
-
-_totp_service() { print -- "totp:$1" }
+# 저장: macOS Keychain, service="<name>" (raw, prefix 없음), account="$USER"
+# <name>은 사용자 기존 keychain 컨벤션 그대로 사용 가능 (예: "MS: silee@imagoworks.ai")
 
 _totp_calc() {
-  # stdin: base32 secret (공백/하이픈 허용, 대소문자 무관)
   /usr/bin/env python3 -c '
 import sys, base64, hmac, hashlib, struct, time
 secret = sys.stdin.read().strip().replace(" ", "").replace("-", "").upper()
@@ -42,7 +40,7 @@ totp() {
       printf '\n'
       [[ -z "$secret" ]] && { print -u2 "totp: empty secret, aborted"; return 1 }
       security add-generic-password -U \
-        -s "$(_totp_service "$name")" \
+        -s "$name" \
         -a "$USER" \
         -w "$secret" \
         || { print -u2 "totp: keychain write failed"; return 1 }
@@ -53,16 +51,18 @@ totp() {
       local name="${2:-}"
       [[ -z "$name" ]] && { print -u2 "usage: totp rm <name>"; return 2 }
       security delete-generic-password \
-        -s "$(_totp_service "$name")" \
+        -s "$name" \
         -a "$USER" >/dev/null 2>&1 \
         && print -- "totp: removed '$name'" \
         || { print -u2 "totp: '$name' not found"; return 1 }
       ;;
 
     ls|list)
+      local pattern="${2:-}"
+      [[ -z "$pattern" ]] && { print -u2 "usage: totp ls <pattern>  (예: totp ls MS:)"; return 2 }
       security dump-keychain 2>/dev/null \
-        | awk -F'"' '/"svce"<blob>="totp:/ {print $4}' \
-        | sed 's/^totp://' \
+        | awk -F'"' '/"svce"<blob>=/ {print $4}' \
+        | grep -- "$pattern" \
         | sort -u
       ;;
 
@@ -70,10 +70,18 @@ totp() {
       cat <<EOF
 totp — macOS Keychain 기반 TOTP 생성기
 
-  totp <name>         6자리 코드 출력 + 클립보드 복사
-  totp add <name>     secret 등록 (input hidden)
-  totp rm <name>      등록 제거
-  totp ls             등록 목록
+  totp <name>          6자리 코드 출력 + 클립보드 복사
+  totp add <name>      secret 등록 (입력 시 echo 안 됨)
+  totp rm <name>       등록 제거
+  totp ls <pattern>    service 이름이 pattern을 포함하는 항목 나열
+
+저장 컨벤션:
+  service = <name> (raw, prefix 없음)
+  account = \$USER
+
+예:
+  totp add "MS: you@example.com"
+  totp     "MS: you@example.com"
 EOF
       [[ "$sub" == "" ]] && return 2 || return 0
       ;;
@@ -82,9 +90,9 @@ EOF
       local name="$sub"
       local secret
       secret=$(security find-generic-password -w \
-        -s "$(_totp_service "$name")" \
+        -s "$name" \
         -a "$USER" 2>/dev/null) \
-        || { print -u2 "totp: '$name' not found in keychain (try: totp add $name)"; return 1 }
+        || { print -u2 "totp: '$name' not found in keychain (try: totp add \"$name\")"; return 1 }
       local code
       code=$(print -rn -- "$secret" | _totp_calc) || return 1
       print -- "$code"
