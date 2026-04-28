@@ -19,7 +19,7 @@ typeset -g _TOTP_KIND='TOTP (totp.plugin.zsh)'
 typeset -g _TOTP_VERSION='0.1.0'
 
 _totp_calc() {
-  /usr/bin/env python3 -c '
+  /usr/bin/python3 -c '
 import sys, base64, hmac, hashlib, struct, time
 secret = sys.stdin.read().strip().replace(" ", "").replace("-", "").upper()
 if not secret:
@@ -35,7 +35,7 @@ print(f"{code:06d}")
 
 # stdout: 마커가 부착된 generic-password의 service 이름들 (sort -u)
 _totp_list_marked() {
-  security dump-keychain 2>/dev/null | /usr/bin/env python3 -c '
+  security dump-keychain 2>/dev/null | /usr/bin/python3 -c '
 import sys, re
 kind = sys.argv[1]
 svce = desc = None
